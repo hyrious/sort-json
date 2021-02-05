@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sort JSON</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: auto;
+            padding: 2ch;
+            max-width: 70ch;
+            height: 100vh;
+            display: flex;
+            flex-flow: column nowrap;
+        }
+        .row {
+            margin-bottom: 0.5em;
+            display: flex;
+            align-items: center;
+        }
+        .splitter {
+            flex: 1;
+        }
+        textarea {
+            flex: 1;
+            resize: none;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="row">
+        <label for="input">Input JSON here:</label>
+        <div class="splitter"></div>
+        <button onclick="sort()">SORT</button>
+    </div>
+    <textarea id="input"></textarea>
+    <script>
+        const $ = sel => document.querySelector(sel)
+        const ta = $('textarea')
+
+        function sort() {
+            try {
+                const a = make(JSON.parse(ta.value))
+                ta.value = stringify(a, null, 2)
+            } catch (e) {
+                window.alert(e.message);
+            }
+        }
+
+        function make(obj) {
+            if (Array.isArray(obj) || !(obj instanceof Object)) {
+                return obj
+            } else {
+                const _entries_ = [];
+                for (const k of Object.keys(obj).sort()) {
+                    _entries_.push({ key: k, value: make(obj[k]) })
+                }
+                return { _entries_ }
+            }
+        }
+
+        function stringify(a, f, indent, n = 1) {
+            if (a instanceof Object && '_entries_' in a) {
+                let result = '{\n'
+                for (const { key, value: v } of a._entries_) {
+                    const s = JSON.stringify({ [key]: '_placeholder_' }, f, indent)
+                    const str = s.substring(s.indexOf('\n') + 1, s.indexOf('}') - 1)
+                    const values = stringify(v, f, indent, n + 1).split("\n")
+                    for (let i = 1; i < values.length; ++i) {
+                        values[i] = ' '.repeat(indent * n) + values[i]
+                    }
+                    result += str.replace('"_placeholder_"', values.join("\n"))
+                    result += ",\n"
+                }
+                result = result.replace(/,\n$/m, '\n}')
+                return result
+            } else {
+                return JSON.stringify(a, f, indent)
+            }
+        }
+    </script>
+</body>
+</html>
